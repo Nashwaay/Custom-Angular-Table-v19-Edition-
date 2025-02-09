@@ -1,0 +1,153 @@
+<div class="custom-table-container">
+  @if (config().showControls) {
+  <div class="table-controls">
+    <div class="mode-controls">
+      <button
+        class="control-btn"
+        [class.active]="tableMode() === TableMode.ReadOnly"
+        (click)="setTableMode(TableMode.ReadOnly)"
+      >
+        👁️ Read-only
+      </button>
+      <button
+        class="control-btn"
+        [class.active]="tableMode() === TableMode.Editable"
+        (click)="setTableMode(TableMode.Editable)"
+      >
+        ✏️ Editable
+      </button>
+      <button
+        class="control-btn"
+        [class.active]="tableMode() === TableMode.Disabled"
+        (click)="setTableMode(TableMode.Disabled)"
+      >
+        🔒 Disabled
+      </button>
+    </div>
+    <div class="search-control">
+      <input
+        type="text"
+        placeholder="Search..."
+        (input)="onSearch($any($event.target).value)"
+        class="search-input"
+      />
+    </div>
+  </div>
+  }
+
+  <table class="custom-table">
+    <thead>
+      <tr>
+        @for (column of columns(); track column.key) {
+        <th
+          [style.width]="column.width"
+          [class.sortable]="column.sortable"
+          (click)="toggleSort(column)"
+        >
+          <div class="th-content">
+            {{ column.header }}
+            @if (column.sortable) {
+            <span class="sort-icon">{{ getSortIcon(column) }}</span>
+            }
+          </div>
+        </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of filteredAndSortedData(); track row.id) {
+      <tr>
+        @for (column of columns(); track column.key) {
+        <td>
+          @if (column.key === 'id') {
+          <span>{{ getCellValue(row, column) }}</span>
+          } @else if (tableMode() === TableMode.Disabled && column.type !==
+          'badge') { @switch (column.type) { @case ('input') {
+          <input
+            type="text"
+            [value]="getCellValue(row, column)"
+            disabled
+            class="cell-input disabled"
+          />
+          } @case ('date') {
+          <input
+            type="date"
+            [value]="getCellValue(row, column)"
+            disabled
+            class="cell-input disabled"
+          />
+          } @default {
+          <input
+            type="text"
+            [value]="getCellValue(row, column)"
+            disabled
+            class="cell-input disabled"
+          />
+          } } } @else if (isEditing(row.id, column.key) &&
+          isCellEditable(column) && tableMode() === TableMode.Editable) {
+
+          <input
+            #inputElement
+            [type]="column.type"
+            [value]="getCellValue(row, column)"
+            (input)="onCellValueChange(row, column, $any($event.target).value)"
+            class="cell-input"
+            (blur)="toggleEdit(row.id, column.key)"
+          />
+          } @else { @switch (column.type) { @case ('link') {
+          <a target="_blank" href="row['link']" style="cursor: pointer">
+            {{ getCellValue(row, column) }}
+          </a>
+          } @case ('text') {
+          <span
+            [class.editable]="
+              isCellEditable(column) && tableMode() === TableMode.Editable
+            "
+            (click)="
+              isCellEditable(column) &&
+                tableMode() === TableMode.Editable &&
+                toggleEdit(row.id, column.key)
+            "
+          >
+            {{ getCellValue(row, column) }}
+          </span>
+          } @case ('number') {
+          <span
+            [class.editable]="
+              isCellEditable(column) && tableMode() === TableMode.Editable
+            "
+            (click)="
+              isCellEditable(column) &&
+                tableMode() === TableMode.Editable &&
+                toggleEdit(row.id, column.key)
+            "
+          >
+            {{ getCellValue(row, column) }}
+          </span>
+          } @case ('badge') {
+          <span [class]="getBadgeClass(row['statusType'])">
+            {{ getCellValue(row, column) }}
+          </span>
+          } @case ('date') {
+          <span
+            [class.editable]="
+              isCellEditable(column) && tableMode() === TableMode.Editable
+            "
+            (click)="
+              isCellEditable(column) &&
+                tableMode() === TableMode.Editable &&
+                toggleEdit(row.id, column.key)
+            "
+          >
+            {{ formatDate(getCellValue(row, column)) }}
+          </span>
+          } @default {
+          <span>{{ getCellValue(row, column) }}</span>
+          } } }
+        </td>
+        }
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>
